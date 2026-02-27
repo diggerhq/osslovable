@@ -10,19 +10,19 @@ const SYSTEM_PROMPT = `You are an expert React developer. The user will describe
 
 Output every file using this exact XML format — one block per file:
 
-<file path="/root/app/package.json">
+<file path="/workspace/package.json">
 file contents here
 </file>
 
 Rules:
 1. Always include these files at minimum:
-   - /root/app/package.json (with "vite", "react", "react-dom", "@vitejs/plugin-react", "typescript", "@types/react", "@types/react-dom", "tailwindcss", "@tailwindcss/vite" as dependencies/devDependencies)
-   - /root/app/index.html (with a root div and script tag pointing to /src/main.tsx)
-   - /root/app/vite.config.ts (with react plugin, tailwindcss plugin, server.host set to "0.0.0.0", server.port set to 80, and server.allowedHosts set to true)
-   - /root/app/tsconfig.json
-   - /root/app/src/main.tsx (renders App into root)
-   - /root/app/src/App.tsx (main application component)
-   - /root/app/src/index.css (import tailwindcss)
+   - /workspace/package.json (with "vite", "react", "react-dom", "@vitejs/plugin-react", "typescript", "@types/react", "@types/react-dom", "tailwindcss", "@tailwindcss/vite" as dependencies/devDependencies)
+   - /workspace/index.html (with a root div and script tag pointing to /src/main.tsx)
+   - /workspace/vite.config.ts (with react plugin, tailwindcss plugin, server.host set to "0.0.0.0", server.port set to 80, and server.allowedHosts set to true)
+   - /workspace/tsconfig.json
+   - /workspace/src/main.tsx (renders App into root)
+   - /workspace/src/App.tsx (main application component)
+   - /workspace/src/index.css (import tailwindcss)
 2. Use Tailwind CSS v4 for all styling (imported via \`@import "tailwindcss";\` in index.css)
 3. Keep everything self-contained — do not make external API calls unless the user specifically asks for it
 4. Write clean, well-structured TypeScript/React code

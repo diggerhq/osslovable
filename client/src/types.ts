@@ -11,6 +11,10 @@ export interface GenerationState {
   previewUrl: string | null;
   sandboxId: string | null;
   error: string | null;
+  deployStatus: "idle" | "deploying" | "deployed" | "error";
+  deployStatusMessage: string;
+  deployUrl: string | null;
+  deployError: string | null;
 }
 
 export type SSEEvent =
@@ -20,5 +24,12 @@ export type SSEEvent =
   | { type: "chunk"; text: string }
   | { type: "log"; message: string }
   | { type: "ready"; previewUrl: string }
+  | { type: "done" }
+  | { type: "error"; message: string };
+
+export type DeploySSEEvent =
+  | { type: "status"; message: string }
+  | { type: "log"; message: string }
+  | { type: "deployed"; url: string }
   | { type: "done" }
   | { type: "error"; message: string };

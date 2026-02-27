@@ -7,7 +7,7 @@ type View = "landing" | "workspace";
 
 export default function App() {
   const [view, setView] = useState<View>("landing");
-  const { state, generate } = useGeneration();
+  const { state, generate, deploy } = useGeneration();
 
   const handleGenerate = async (prompt: string) => {
     setView("workspace");
@@ -15,7 +15,7 @@ export default function App() {
   };
 
   if (view === "workspace") {
-    return <Workspace state={state} onGenerate={handleGenerate} />;
+    return <Workspace state={state} onGenerate={handleGenerate} onDeploy={deploy} />;
   }
 
   return <LandingPage onGenerate={handleGenerate} />;

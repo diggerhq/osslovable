@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import type { GenerationState, SSEEvent } from "../types";
+import type { GenerationState, SSEEvent, DeploySSEEvent } from "../types";
 
 const initialState: GenerationState = {
   status: "idle",
@@ -9,6 +9,10 @@ const initialState: GenerationState = {
   previewUrl: null,
   sandboxId: null,
   error: null,
+  deployStatus: "idle",
+  deployStatusMessage: "",
+  deployUrl: null,
+  deployError: null,
 };
 
 export function useGeneration() {
@@ -81,7 +85,63 @@ export function useGeneration() {
     }
   }, [state.sandboxId]);
 
-  return { state, generate };
+  const deploy = useCallback(async () => {
+    if (!state.sandboxId) return;
+
+    setState((prev) => ({
+      ...prev,
+      deployStatus: "deploying",
+      deployStatusMessage: "Starting deploy...",
+      deployError: null,
+      deployUrl: null,
+    }));
+
+    try {
+      const res = await fetch("/api/deploy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sandboxId: state.sandboxId }),
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error(`Server error: ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const event: DeploySSEEvent = JSON.parse(jsonStr);
+            handleDeployEvent(event, setState);
+          } catch {
+            // Skip malformed events
+          }
+        }
+      }
+    } catch (err) {
+      setState((prev) => ({
+        ...prev,
+        deployStatus: "error",
+        deployError: err instanceof Error ? err.message : "Unknown error",
+      }));
+    }
+  }, [state.sandboxId]);
+
+  return { state, generate, deploy };
 }
 
 function handleEvent(
@@ -152,6 +212,44 @@ function handleEvent(
         ...prev,
         status: "idle",
         error: event.message,
+      }));
+      break;
+  }
+}
+
+function handleDeployEvent(
+  event: DeploySSEEvent,
+  setState: React.Dispatch<React.SetStateAction<GenerationState>>
+) {
+  switch (event.type) {
+    case "status":
+      setState((prev) => ({
+        ...prev,
+        deployStatusMessage: event.message,
+      }));
+      break;
+
+    case "deployed":
+      setState((prev) => ({
+        ...prev,
+        deployStatus: "deployed",
+        deployStatusMessage: "Deployed!",
+        deployUrl: event.url,
+      }));
+      break;
+
+    case "done":
+      setState((prev) => ({
+        ...prev,
+        deployStatus: "deployed",
+      }));
+      break;
+
+    case "error":
+      setState((prev) => ({
+        ...prev,
+        deployStatus: "error",
+        deployError: event.message,
       }));
       break;
   }

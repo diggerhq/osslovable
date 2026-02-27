@@ -7,6 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 import express from "express";
 import cors from "cors";
 import { generateRoute } from "./routes/generate.js";
+import { deployRoute } from "./routes/deploy.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -15,6 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 app.post("/api/generate", generateRoute);
+app.post("/api/deploy", deployRoute);
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });

@@ -31,16 +31,22 @@ export async function generateRoute(req: Request, res: Response) {
     "X-Accel-Buffering": "no",
   });
 
+  const t0 = Date.now();
+  const elapsed = () => `${((Date.now() - t0) / 1000).toFixed(1)}s`;
+
   try {
     // Step 1: Create or reuse sandbox
+    console.log(`[generate] [${elapsed()}] Step 1: Creating sandbox...`);
     sendSSE(res, { type: "status", message: "Creating sandbox..." });
 
     let sandbox;
     if (sandboxId) {
       sandbox = getSandbox(sandboxId);
+      if (sandbox) console.log(`[generate] [${elapsed()}] Reusing sandbox ${sandboxId}`);
     }
     if (!sandbox) {
       sandbox = await createSandbox();
+      console.log(`[generate] [${elapsed()}] Created sandbox ${sandbox.sandboxId} (domain: ${sandbox.domain})`);
     }
 
     const previewUrl = getPreviewUrl(sandbox);
@@ -51,16 +57,17 @@ export async function generateRoute(req: Request, res: Response) {
     });
 
     // Step 2: Stream code generation from Claude
+    console.log(`[generate] [${elapsed()}] Step 2: Generating code...`);
     sendSSE(res, { type: "status", message: "Generating code..." });
 
     const collectedFiles: Array<{ path: string; content: string }> = [];
 
     for await (const event of generateCode(prompt)) {
       if (event.type === "chunk") {
-        // Send raw chunks for live code display
         sendSSE(res, { type: "chunk", text: event.text });
       } else if (event.type === "file") {
         collectedFiles.push({ path: event.path, content: event.content });
+        console.log(`[generate] [${elapsed()}] Parsed file: ${event.path} (${event.content.length} bytes)`);
         sendSSE(res, {
           type: "file",
           path: event.path,
@@ -69,38 +76,48 @@ export async function generateRoute(req: Request, res: Response) {
       }
     }
 
+    console.log(`[generate] [${elapsed()}] Code generation done. ${collectedFiles.length} files.`);
+
     // Step 3: Write all files to sandbox
+    console.log(`[generate] [${elapsed()}] Step 3: Writing files...`);
     sendSSE(res, { type: "status", message: "Writing files to sandbox..." });
 
     for (const file of collectedFiles) {
       try {
         await writeFile(sandbox, file.path, file.content);
+        console.log(`[generate] [${elapsed()}] Wrote ${file.path}`);
         sendSSE(res, { type: "log", message: `Wrote ${file.path}` });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error(`Failed to write ${file.path}:`, msg);
+        console.error(`[generate] [${elapsed()}] FAILED to write ${file.path}:`, msg);
         sendSSE(res, { type: "log", message: `Failed to write ${file.path}: ${msg}` });
         throw err;
       }
     }
 
     // Step 4: Install dependencies and start dev server
+    console.log(`[generate] [${elapsed()}] Step 4: Starting dev server...`);
     sendSSE(res, {
       type: "status",
       message: "Installing dependencies & starting dev server...",
     });
 
     await startDevServer(sandbox, (log) => {
+      console.log(`[generate] [${elapsed()}] [devserver] ${log}`);
       sendSSE(res, { type: "log", message: log });
     });
 
     // Step 5: Signal readiness
+    console.log(`[generate] [${elapsed()}] Step 5: Ready! Preview: ${previewUrl}`);
     sendSSE(res, { type: "ready", previewUrl });
     sendSSE(res, { type: "done" });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[generate] [${elapsed()}] ERROR: ${message}`);
+    if (err instanceof Error && err.stack) console.error(err.stack);
     sendSSE(res, { type: "error", message });
   } finally {
+    console.log(`[generate] [${elapsed()}] Total time.`);
     res.end();
   }
 }

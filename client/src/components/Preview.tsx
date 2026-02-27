@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RefreshCw, ExternalLink, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2 } from "lucide-react";
 
 interface Props {
   url: string | null;
@@ -11,7 +11,7 @@ export default function Preview({ url, isLoading }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* URL bar */}
+      {/* Preview toolbar */}
       <div className="h-10 flex items-center gap-2 px-3 border-b border-border shrink-0">
         <button
           onClick={() => setRefreshKey((k) => k + 1)}
@@ -21,18 +21,8 @@ export default function Preview({ url, isLoading }: Props) {
           <RefreshCw className="w-3.5 h-3.5" />
         </button>
         <div className="flex-1 flex items-center bg-surface-light rounded-lg px-3 py-1 text-xs text-[#8888a0] truncate border border-border/50">
-          {url || "Waiting for sandbox..."}
+          Preview
         </div>
-        {url && (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1.5 rounded-md hover:bg-surface-lighter text-[#8888a0] hover:text-white transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        )}
       </div>
 
       {/* iframe or loading state */}
