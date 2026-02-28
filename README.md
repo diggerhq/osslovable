@@ -34,6 +34,7 @@ npm run dev
 |---|---|
 | `ANTHROPIC_API_KEY` | Anthropic API key for Claude |
 | `OPENCOMPUTER_API_KEY` | OpenComputer API key for sandboxes |
+| `DEPLOY_DOMAIN` | Custom domain for deploy URLs (defaults to `openlovable.cc`) |
 
 ## Deployment
 

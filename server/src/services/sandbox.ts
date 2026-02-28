@@ -265,6 +265,7 @@ export async function copyFiles(
 export async function createDeployPreviewURL(
   sandbox: Sandbox
 ): Promise<string> {
-  const result = await sandbox.createPreviewURL({ port: 80, domain: "openlovable.cc", authConfig: {} });
+  const domain = process.env.DEPLOY_DOMAIN || "openlovable.cc";
+  const result = await sandbox.createPreviewURL({ port: 80, domain, authConfig: {} });
   return `https://${result.customHostname || result.hostname}`;
 }
