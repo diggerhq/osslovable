@@ -5,7 +5,7 @@ import {
   getSandbox,
   writeFile,
   startDevServer,
-  getPreviewUrl,
+  createPreviewUrl,
 } from "../services/sandbox.js";
 
 function sendSSE(res: Response, data: Record<string, unknown>) {
@@ -46,10 +46,11 @@ export async function generateRoute(req: Request, res: Response) {
     }
     if (!sandbox) {
       sandbox = await createSandbox();
-      console.log(`[generate] [${elapsed()}] Created sandbox ${sandbox.sandboxId} (domain: ${sandbox.domain})`);
+      console.log(`[generate] [${elapsed()}] Created sandbox ${sandbox.sandboxId}`);
     }
 
-    const previewUrl = getPreviewUrl(sandbox);
+    const previewUrl = await createPreviewUrl(sandbox);
+    console.log(`[generate] [${elapsed()}] Preview URL: ${previewUrl}`);
     sendSSE(res, {
       type: "sandbox",
       sandboxId: sandbox.sandboxId,

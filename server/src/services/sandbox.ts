@@ -3,19 +3,6 @@ import type { EntryInfo } from "@opencomputer/sdk";
 
 export const APP_DIR = "/workspace";
 
-function resolveApiUrl(url: string): string {
-  const base = url.replace(/\/+$/, "");
-  return base.endsWith("/api") ? base : `${base}/api`;
-}
-
-function getApiConfig() {
-  const apiUrl = resolveApiUrl(
-    process.env.OPENCOMPUTER_API_URL ?? "https://app.opencomputer.dev"
-  );
-  const apiKey = process.env.OPENCOMPUTER_API_KEY ?? "";
-  return { apiUrl, apiKey };
-}
-
 // Cache of active sandboxes by ID
 const activeSandboxes = new Map<string, Sandbox>();
 
@@ -238,10 +225,14 @@ export default defineConfig({
   throw new Error(`Dev server did not become ready within 30s. Vite log:\n${result.stdout}`);
 }
 
-export function getPreviewUrl(sandbox: Sandbox): string {
-  const protocol = process.env.SANDBOX_PROTOCOL || "https";
-  const port = process.env.SANDBOX_PORT ? `:${process.env.SANDBOX_PORT}` : "";
-  return `${protocol}://${sandbox.domain}${port}`;
+export async function createPreviewUrl(sandbox: Sandbox): Promise<string> {
+  const existing = await sandbox.listPreviewURLs();
+  const match = existing.find((p) => p.port === 80);
+  if (match) {
+    return `https://${match.hostname}`;
+  }
+  const result = await sandbox.createPreviewURL({ port: 80 });
+  return `https://${result.hostname}`;
 }
 
 /**
@@ -269,31 +260,11 @@ export async function copyFiles(
 }
 
 /**
- * Create a deploy preview URL with a custom hostname (openlovable.cc).
- * The SDK's createPreviewURL doesn't accept hostname, so we call the API directly.
+ * Create a deploy preview URL for public access.
  */
 export async function createDeployPreviewURL(
   sandbox: Sandbox
 ): Promise<string> {
-  const { apiUrl, apiKey } = getApiConfig();
-  const resp = await fetch(
-    `${apiUrl}/sandboxes/${sandbox.sandboxId}/preview`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(apiKey ? { "X-API-Key": apiKey } : {}),
-      },
-      body: JSON.stringify({
-        authConfig: {},
-        hostname: "openlovable.cc",
-      }),
-    }
-  );
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Failed to create deploy preview URL: ${resp.status} ${text}`);
-  }
-  const result = await resp.json();
-  return `https://${result.hostname}`;
+  const result = await sandbox.createPreviewURL({ port: 80, domain: "openlovable.cc", authConfig: {} });
+  return `https://${result.customHostname || result.hostname}`;
 }
