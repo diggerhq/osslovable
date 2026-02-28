@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Github, ExternalLink } from "lucide-react";
 
 const EXAMPLE_PROMPTS = [
   "A task management app with drag-and-drop",
@@ -96,6 +96,29 @@ export default function LandingPage({ onGenerate }: Props) {
               {example}
             </button>
           ))}
+        </div>
+
+        {/* Links */}
+        <div className="flex items-center gap-4 mt-10 text-sm text-[#8888a0]">
+          <a
+            href="https://github.com/diggerhq/osslovable"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
+            <Github className="w-4 h-4" />
+            GitHub
+          </a>
+          <span className="text-border">|</span>
+          <a
+            href="https://opencomputer.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            OpenComputer
+          </a>
         </div>
       </div>
     </div>
